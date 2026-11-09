@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07100e" />
+  <title>FULL TIME — Penalty Club</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="game-shell">
+    <canvas id="pitch" aria-label="3D football pitch"></canvas>
+    <div class="vignette"></div>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Full Time home"><span class="brand-mark">FT<span>.</span></span><span class="brand-name">FULL<br>TIME</span></a>
+      <div class="match-pill"><span class="live-dot"></span><span>THE SHOOTOUT</span><i></i><span class="round-label">ROUND 01</span></div>
+      <button class="sound-button" id="soundButton" aria-label="Toggle sound"><span id="soundIcon">♫</span><span>SOUND</span></button>
+    </header>
+    <section class="scoreboard" aria-label="Scoreboard">
+      <div class="team-score"><span class="team-crest crest-home">✦</span><div><small>YOUR CLUB</small><strong id="playerScore">0</strong></div></div>
+      <div class="score-divider"><span>—</span><small id="attemptLabel">0 / 5</small></div>
+      <div class="team-score opponent"><div><small>THE KEEPER</small><strong id="keeperScore">0</strong></div><span class="team-crest crest-away">GK</span></div>
+    </section>
+    <div class="round-progress" aria-label="Shots remaining"><span class="progress-line"></span><div class="shot-dots" id="shotDots"></div><span class="progress-line"></span></div>
+    <aside class="left-note"><span class="note-index">01</span><div><strong>MAKE IT COUNT</strong><small>THE SPOT IS YOURS</small></div></aside>
+    <div class="aim-label" id="aimLabel"><span class="aim-cross">＋</span><span>SET YOUR SIGHTS</span></div>
+    <div class="shot-callout" id="shotCallout" aria-live="polite"></div>
+    <div class="trajectory-hint" id="trajectoryHint"><span class="hint-line"></span>DRAG TO AIM</div>
+    <section class="bottom-hud">
+      <div class="stat-block"><span class="stat-label">SHOT POWER</span><div class="power-row"><div class="power-track"><div class="power-fill" id="powerFill"></div><i class="power-mark mark-1"></i><i class="power-mark mark-2"></i><i class="power-mark mark-3"></i></div><strong id="powerValue">—</strong></div><div class="power-caption"><span>PLACEMENT</span><span>THUNDER</span></div></div>
+      <button class="shoot-button" id="shootButton"><span class="shoot-icon">➤</span><span class="shoot-copy"><strong>SHOOT</strong><small>HOLD TO CHARGE</small></span><span class="shoot-key">SPACE</span></button>
+      <div class="bottom-meta"><div class="wind"><span class="wind-icon">↗</span><div><small>WIND</small><strong>4 <i>KM/H</i></strong></div></div><div class="accuracy"><span class="accuracy-ring"><span id="accuracyValue">—</span></span><small>ACCURACY</small></div></div>
+    </section>
+    <div class="side-tip"><span class="tip-key">↑ ↓ ← →</span> AIM <span class="tip-sep">/</span> <span class="tip-key">SPACE</span> SHOOT</div>
+    <div class="toast" id="toast" aria-live="polite"></div>
+    <section class="overlay" id="introOverlay">
+      <div class="overlay-card intro-card"><div class="eyebrow"><span></span> YOUR MOMENT. YOUR MOVE.</div><h1>ICE IN<br>YOUR <em>VEINS.</em></h1><p>Five shots. One keeper. Make every touch count.</p><div class="intro-rule"><span>01</span><i></i><span>05</span><span class="rule-caption">THE FINAL FIVE</span></div><button class="primary-button" id="startButton">TAKE YOUR PLACE <span>↗</span></button><div class="intro-controls"><span>↔ AIM</span><span>⏱ CHARGE</span><span>⚽ SHOOT</span></div></div>
+      <div class="overlay-foot"><span>EST. 90+4</span><span>NO SECOND CHANCES</span></div>
+    </section>
+    <section class="overlay hidden" id="resultOverlay">
+      <div class="overlay-card result-card"><div class="eyebrow"><span></span> FULL TIME</div><div class="result-kicker" id="resultKicker">WHAT A FINISH.</div><h2 id="resultTitle">ICE COLD.</h2><p id="resultSubtitle">The spot is yours.</p><div class="result-score"><span>YOU</span><strong id="finalScore">0 — 0</strong><span>KEEPER</span></div><button class="primary-button" id="rematchButton">RUN IT BACK <span>↗</span></button><div class="result-best">BEST STREAK <strong id="bestStreak">0</strong></div></div>
+      <div class="overlay-foot"><span>EST. 90+4</span><span>NO SECOND CHANCES</span></div>
+    </section>
+    <button class="restart-button" id="restartButton" aria-label="Restart match" title="Restart match">↻</button>
+    <div class="mobile-controls"><button id="mobileAimLeft" aria-label="Aim left">←</button><button id="mobileAimRight" aria-label="Aim right">→</button><button id="mobileShoot">SHOOT</button></div>
+  </main>
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
