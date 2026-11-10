@@ -109,6 +109,14 @@ function makePlayer(kind='kicker'){
   group.userData={legs,arms,torso,head,kind};scene.add(group);return group;
 }
 const kicker=makePlayer('kicker'), keeper=makePlayer('keeper');
+// The referee watches the line and gives a visible signal after every decision.
+const referee=new THREE.Group();
+const refJersey=mat('#26332f'),refShorts=mat('#202724'),refSkin=mat('#bc8867');
+const refTorso=new THREE.Mesh(new THREE.CapsuleGeometry(.25,.58,5,10),refJersey);refTorso.position.y=1.3;referee.add(refTorso);
+const refHead=new THREE.Mesh(new THREE.SphereGeometry(.19,14,12),refSkin);refHead.position.y=1.9;referee.add(refHead);
+const refArms=[];
+for(const side of [-1,1]){const arm=new THREE.Group();arm.position.set(side*.29,1.58,0);const sleeve=new THREE.Mesh(new THREE.CapsuleGeometry(.07,.38,4,8),refJersey);sleeve.position.y=-.2;arm.add(sleeve);const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.44,4,8),refShorts);leg.position.set(side*.13,.43,0);referee.add(leg);referee.add(arm);refArms.push(arm);}
+referee.position.set(5.2,0,-3.9);referee.rotation.y=-.25;scene.add(referee);
 
 // Match-quality football with inset, raised pentagonal panels.
 const ballGroup=new THREE.Group();const ballRadius=.215;
@@ -124,8 +132,12 @@ const reticle=new THREE.Group();const ring=new THREE.Mesh(new THREE.RingGeometry
 const reticleDot=new THREE.Mesh(new THREE.CircleGeometry(.025,16),new THREE.MeshBasicMaterial({color:'#faffdf'}));reticle.add(reticleDot);
 const reticleH=new THREE.Mesh(new THREE.PlaneGeometry(.5,.008),new THREE.MeshBasicMaterial({color:'#d5ff3f',transparent:true,opacity:.68}));const reticleV=new THREE.Mesh(new THREE.PlaneGeometry(.008,.5),reticleH.material);reticle.add(reticleH,reticleV);reticle.position.set(0,2.4,goalZ-.04);scene.add(reticle);
 
-const ui={playerScore:$('playerScore'),keeperScore:$('keeperScore'),attempt:$('attemptLabel'),dots:$('shotDots'),power:$('powerFill'),powerVal:$('powerValue'),accuracy:$('accuracyValue'),aim:$('aimLabel'),callout:$('shotCallout'),shoot:$('shootButton'),toast:$('toast')};
-let score=0, shots=0, active=false, inFlight=false, charging=false, charge=0, aimX=0, aimY=2.3, time=0, keeperX=0, keeperDive=0, lastResult=false, best=Number(localStorage.getItem('ft-best')||0), windDir=1, soundOn=false;
+const ui={playerScore:$('playerScore'),keeperScore:$('keeperScore'),attempt:$('attemptLabel'),dots:$('shotDots'),power:$('powerFill'),powerVal:$('powerValue'),accuracy:$('accuracyValue'),aim:$('aimLabel'),callout:$('shotCallout'),shoot:$('shootButton'),toast:$('toast'),wind:$('windSpeed'),windIcon:document.querySelector('.wind-icon'),takerName:$('takerName'),takerSkill:$('takerSkill')};
+const takers={ace:{name:'MARA VALE',role:'ACE',skill:96,control:.96},steady:{name:'JULES OKAFOR',role:'STEADY',skill:74,control:.74},rookie:{name:'KIT ROWAN',role:'ROOKIE',skill:48,control:.48}};
+let taker=takers.ace;
+let score=0, shots=0, active=false, inFlight=false, charging=false, charge=0, aimX=0, aimY=2.3, time=0, keeperX=0, keeperDive=0, lastResult=false, best=Number(localStorage.getItem('ft-best')||0), windDir=1, windStrength=4, windClock=0, refereeSignal=0, soundOn=false;
+function updateTaker(){taker=takers[$('takerSelect').value]||takers.ace;ui.takerName.textContent=`${taker.name} · ${taker.role}`;ui.takerSkill.textContent=`PENALTY SKILL ${taker.skill} / 100`;}
+function updateWind(){windStrength=Math.round(3+Math.random()*19);windDir=Math.random()<.5?-1:1;ui.wind.textContent=windStrength;ui.windIcon.textContent=windDir>0?'↗':'↖';}
 const keys={};
 function setAim(x,y){aimX=THREE.MathUtils.clamp(x,-4.05,4.05);aimY=THREE.MathUtils.clamp(y,.22,4.65);reticle.position.set(aimX,aimY,goalZ-.045);ui.aim.style.left='50%';}
 function renderDots(){ui.dots.innerHTML='';for(let i=0;i<5;i++){const d=document.createElement('i');d.className='shot-dot'+(i<shots?(lastResult?'done':'miss'):'')+(i===shots&&active?' active':'');ui.dots.appendChild(d);}}
@@ -137,15 +149,20 @@ function finish(){active=false;const won=score>=3;const drew=score===2;const tit
 function holdStart(){if(!active||inFlight||charging)return;charging=true;charge=0;ui.shoot.classList.add('charging');ui.aim.style.opacity='.32';}
 function holdEnd(){if(!charging)return;charging=false;ui.shoot.classList.remove('charging');ui.aim.style.opacity='1';if(active&&!inFlight)shoot(Math.max(.12,charge));}
 function shoot(power){if(!active||inFlight)return;inFlight=true;shots++;lastResult=false;refresh();ui.aim.style.opacity='0';ui.callout.classList.remove('show');kicker.userData.kick=1;
-  const target=new THREE.Vector3(aimX,aimY,goalZ);const start=ballGroup.position.clone();const duration=1.05+(.7*(1-power));
-  // Keeper reaction; an excellent charge can beat the dive, but a central shot is never safe.
-  const aimOffset=aimX+(Math.random()-.5)*(.55+power*.22);keeperX=THREE.MathUtils.clamp(aimOffset*.82,-3.05,3.05);keeperDive=1;
-  const keeperChance=Math.max(.08,.47-power*.32);
-  const caught=Math.abs(aimX-keeperX)<(.75+(1-power)*.6)&&aimY<4.25&&Math.random()<keeperChance;
-  const wide=Math.abs(aimX)>goalX-.13||aimY<.17||aimY>goalTop-.12;
-  const bar=Math.abs(aimY-goalTop)<.20&&Math.abs(aimX)<goalX;
+  updateWind();
+  // Wind and player composure both nudge the ball away from the sight line.
+  const controlError=(1-taker.control)*1.35;
+  const shotX=aimX+windDir*windStrength*.025+(Math.random()-.5)*controlError;
+  const shotY=aimY+(Math.random()-.5)*controlError*.62;
+  const target=new THREE.Vector3(shotX,shotY,goalZ);const start=ballGroup.position.clone();const duration=1.05+(.7*(1-power));
+  // Keepers read the strike, but a confident taker and a clean charge are harder to stop.
+  const aimOffset=shotX+(Math.random()-.5)*(.55+power*.22);keeperX=THREE.MathUtils.clamp(aimOffset*.82,-3.05,3.05);keeperDive=1;
+  const keeperChance=Math.max(.08,.49-power*.30-taker.control*.12);
+  const caught=Math.abs(shotX-keeperX)<(.75+(1-power)*.6)&&shotY<4.25&&Math.random()<keeperChance;
+  const wide=Math.abs(shotX)>goalX-.13||shotY<.17||shotY>goalTop-.12;
+  const bar=Math.abs(shotY-goalTop)<.20&&Math.abs(shotX)<goalX;
   const goal=!wide&&!bar&&!caught;
-  const height=Math.max(.5,Math.min(1.75, .48+(aimY/goalTop)*.7+(1-power)*.32));
+  const height=Math.max(.5,Math.min(1.75, .48+(shotY/goalTop)*.7+(1-power)*.32));
   let t0=performance.now();
   const animateShot=(now)=>{
     const t=Math.min(1,(now-t0)/(duration*1000));const eased=1-Math.pow(1-t,1.12);
@@ -153,12 +170,14 @@ function shoot(power){if(!active||inFlight)return;inFlight=true;shots++;lastResu
     ballGroup.rotation.x+=.12;ballGroup.rotation.z+=.08;
     shadow.position.set(ballGroup.position.x,.026,ballGroup.position.z);shadow.scale.setScalar(Math.max(.38,1-t*.58));shadow.material.opacity=.32*(1-t*.45);
     if(t<1){requestAnimationFrame(animateShot);return;}
-    ballGroup.position.copy(target);keeperDive=goal?0:1;lastResult=goal;refresh();
-    if(goal){score++;lastResult=true;callout('GOAL.');popToast('TOP BINS. WHAT A STRIKE.');}
+    ballGroup.position.copy(target);keeperDive=goal?0:1;lastResult=goal;
+    refereeSignal=goal?1:-1;
+    if(goal){score++;callout('STRIKE!');popToast('THE FANS ERUPT — TOP BINS!');}
     else if(caught){callout('SAVED.',true);popToast('THE KEEPER READ IT.');}
     else if(bar){callout('OFF THE BAR.',true);popToast('SO CLOSE.');}
-    else{callout('WIDE.',true);popToast('JUST OFF TARGET.');}
-    ui.accuracy.textContent=`${Math.round((1-Math.min(1,Math.hypot(aimX,aimY-2.4)/6))*100)}%`;
+    else{callout('MISS.',true);popToast('WIND CARRIED IT WIDE.');}
+    refresh();
+    ui.accuracy.textContent=`${Math.round(Math.max(0,100-Math.hypot(shotX-aimX,shotY-aimY)*28-Math.hypot(shotX,shotY-2.4)*7))}%`;
     setTimeout(()=>{
       if(shots>=5){finish();return;}
       inFlight=false;ballGroup.position.set(0,ballRadius+.025,5.15);ballGroup.rotation.set(0,0,0);shadow.position.set(0,.025,5.15);shadow.scale.setScalar(1);shadow.material.opacity=.32;keeperDive=0;keeperX=0;kicker.userData.kick=0;setAim((Math.random()-.5)*.65,2.1+Math.random()*.65);refresh();ui.aim.style.opacity='1';
@@ -181,6 +200,8 @@ $('mobileShoot').addEventListener('pointerdown',e=>{e.preventDefault();holdStart
 window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();holdStart()}if(e.key==='Enter'&&!active)startGame();if(e.key.toLowerCase()==='r'){$('restartButton').click()}});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.code==='Space')holdEnd()});window.addEventListener('blur',()=>{if(charging)holdEnd()});
 $('soundButton').addEventListener('click',()=>{soundOn=!soundOn;$('soundIcon').textContent=soundOn?'♫':'♪';popToast(soundOn?'SOUND ON':'SOUND OFF')});
+$('takerSelect').addEventListener('change',updateTaker);
+updateTaker();updateWind();
 
 let prev=performance.now();
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,(now-prev)/1000);prev=now;time+=dt;
@@ -190,7 +211,9 @@ function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,(now-
   if(active&&!inFlight&&!charging){const step=dt*1.75;if(keys.arrowleft||keys.a)setAim(aimX-step,aimY);if(keys.arrowright||keys.d)setAim(aimX+step,aimY);if(keys.arrowup||keys.w)setAim(aimX,aimY+step);if(keys.arrowdown||keys.s)setAim(aimX,aimY-step);}
   if(!inFlight){ballGroup.position.y=ballRadius+.025+Math.sin(time*2.7)*.012;ballGroup.rotation.y+=dt*.15;}
   const p=kicker.userData.kick||0;if(p>0){kicker.userData.kick=Math.max(0,p-dt*1.6);kicker.userData.legs[1].rotation.x=-Math.sin((1-p)*Math.PI)*.95;kicker.userData.legs[0].rotation.x=Math.sin((1-p)*Math.PI)*.22;kicker.userData.arms[0].rotation.z=.22*Math.sin((1-p)*Math.PI);kicker.userData.arms[1].rotation.z=-.22*Math.sin((1-p)*Math.PI);}else{kicker.userData.legs.forEach(l=>l.rotation.x=0);kicker.userData.arms.forEach(a=>a.rotation.z=0);}
-  if(keeperDive>0){keeper.position.x+=(keeperX-keeper.position.x)*Math.min(1,dt*4.2);keeper.rotation.z+=(keeperX>0?-.75:.75-keeper.rotation.z)*Math.min(1,dt*4);keeper.rotation.x=-.3;keeper.position.y=Math.sin(Math.min(1,keeperDive))*0;keeperDive=Math.max(0,keeperDive-dt*1.5);}else{keeper.position.x+=(0-keeper.position.x)*Math.min(1,dt*2);keeper.rotation.z*=.94;keeper.rotation.x*=.94;}
+  if(keeperDive>0){keeper.position.x+=(keeperX-keeper.position.x)*Math.min(1,dt*4.2);keeper.rotation.z+=((keeperX>0?-.75:.75)-keeper.rotation.z)*Math.min(1,dt*4);keeper.rotation.x=-.3;keeper.position.y=Math.sin(Math.min(1,keeperDive))*0;keeperDive=Math.max(0,keeperDive-dt*1.5);}else{keeper.position.x+=(0-keeper.position.x)*Math.min(1,dt*2);keeper.rotation.z*=.94;keeper.rotation.x*=.94;}
+  if(refereeSignal>0){refArms[1].rotation.z=-.78;refArms[0].rotation.z=.08;}else if(refereeSignal<0){refArms[0].rotation.z=.45;refArms[1].rotation.z=-.45;}else{refArms[0].rotation.z=Math.sin(time*2)*.08;refArms[1].rotation.z=-Math.sin(time*2)*.08;}
+  refereeSignal*=Math.max(0,1-dt*1.6);
   reticle.scale.setScalar(1+Math.sin(time*3)*.035);renderer.render(scene,camera);
 }
 requestAnimationFrame(animate);

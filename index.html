@@ -22,19 +22,20 @@
       <div class="team-score opponent"><div><small>THE KEEPER</small><strong id="keeperScore">0</strong></div><span class="team-crest crest-away">GK</span></div>
     </section>
     <div class="round-progress" aria-label="Shots remaining"><span class="progress-line"></span><div class="shot-dots" id="shotDots"></div><span class="progress-line"></span></div>
-    <aside class="left-note"><span class="note-index">01</span><div><strong>MAKE IT COUNT</strong><small>THE SPOT IS YOURS</small></div></aside>
+    <aside class="left-note"><span class="note-index">XI</span><div><strong id="takerName">MARA VALE · ACE</strong><small id="takerSkill">PENALTY SKILL 96 / 100</small></div></aside>
     <div class="aim-label" id="aimLabel"><span class="aim-cross">＋</span><span>SET YOUR SIGHTS</span></div>
     <div class="shot-callout" id="shotCallout" aria-live="polite"></div>
     <div class="trajectory-hint" id="trajectoryHint"><span class="hint-line"></span>DRAG TO AIM</div>
     <section class="bottom-hud">
       <div class="stat-block"><span class="stat-label">SHOT POWER</span><div class="power-row"><div class="power-track"><div class="power-fill" id="powerFill"></div><i class="power-mark mark-1"></i><i class="power-mark mark-2"></i><i class="power-mark mark-3"></i></div><strong id="powerValue">—</strong></div><div class="power-caption"><span>PLACEMENT</span><span>THUNDER</span></div></div>
       <button class="shoot-button" id="shootButton"><span class="shoot-icon">➤</span><span class="shoot-copy"><strong>SHOOT</strong><small>HOLD TO CHARGE</small></span><span class="shoot-key">SPACE</span></button>
-      <div class="bottom-meta"><div class="wind"><span class="wind-icon">↗</span><div><small>WIND</small><strong>4 <i>KM/H</i></strong></div></div><div class="accuracy"><span class="accuracy-ring"><span id="accuracyValue">—</span></span><small>ACCURACY</small></div></div>
+      <div class="bottom-meta"><div class="accuracy"><span class="accuracy-ring"><span id="accuracyValue">—</span></span><small>ACCURACY</small></div></div>
     </section>
+    <div class="wind"><span class="wind-icon">↗</span><div><small>WIND</small><strong><span id="windSpeed">4</span> <i>KM/H</i></strong></div></div>
     <div class="side-tip"><span class="tip-key">↑ ↓ ← →</span> AIM <span class="tip-sep">/</span> <span class="tip-key">SPACE</span> SHOOT</div>
     <div class="toast" id="toast" aria-live="polite"></div>
     <section class="overlay" id="introOverlay">
-      <div class="overlay-card intro-card"><div class="eyebrow"><span></span> YOUR MOMENT. YOUR MOVE.</div><h1>ICE IN<br>YOUR <em>VEINS.</em></h1><p>Five shots. One keeper. Make every touch count.</p><div class="intro-rule"><span>01</span><i></i><span>05</span><span class="rule-caption">THE FINAL FIVE</span></div><button class="primary-button" id="startButton">TAKE YOUR PLACE <span>↗</span></button><div class="intro-controls"><span>↔ AIM</span><span>⏱ CHARGE</span><span>⚽ SHOOT</span></div></div>
+      <div class="overlay-card intro-card"><div class="eyebrow"><span></span> YOUR MOMENT. YOUR MOVE.</div><h1>ICE IN<br>YOUR <em>VEINS.</em></h1><p>Five shots. One keeper. Make every touch count.</p><label class="taker-picker" for="takerSelect"><span>CHOOSE YOUR TAKER</span><select id="takerSelect"><option value="ace">Mara Vale · Ace (96)</option><option value="steady">Jules Okafor · Steady (74)</option><option value="rookie">Kit Rowan · Rookie (48)</option></select></label><div class="intro-rule"><span>01</span><i></i><span>05</span><span class="rule-caption">THE FINAL FIVE</span></div><button class="primary-button" id="startButton">TAKE YOUR PLACE <span>↗</span></button><div class="intro-controls"><span>↔ AIM</span><span>⏱ CHARGE</span><span>⚽ SHOOT</span></div></div>
       <div class="overlay-foot"><span>EST. 90+4</span><span>NO SECOND CHANCES</span></div>
     </section>
     <section class="overlay hidden" id="resultOverlay">
